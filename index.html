@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>오목 게임</title>
+
+<style>
+body{
+    font-family: Arial;
+    text-align:center;
+    background:#f4f4f4;
+}
+
+h2{
+    margin-top:20px;
+}
+
+#board{
+    margin:20px auto;
+    background:#d8a55d;
+    border:3px solid #333;
+    display:block;
+    cursor:pointer;
+}
+
+button{
+    padding:10px 20px;
+    font-size:16px;
+}
+
+#status{
+    font-size:20px;
+    font-weight:bold;
+}
+</style>
+
+</head>
+<body>
+
+<h2>오목 게임</h2>
+
+<div id="status">흑 차례</div>
+
+<canvas id="board" width="760" height="760"></canvas>
+
+<br>
+<button onclick="resetGame()">새 게임</button>
+
+<script>
+
+const SIZE = 19;
+const CELL = 40;
+const OFFSET = 20;
+
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+
+let board=[];
+let current=1;
+let gameOver=false;
+
+function init(){
+
+    board=[];
+
+    for(let y=0;y<SIZE;y++){
+        board[y]=[];
+        for(let x=0;x<SIZE;x++)
+            board[y][x]=0;
+    }
+
+    current=1;
+    gameOver=false;
+
+    document.getElementById("status").innerHTML="흑 차례";
+
+    drawBoard();
+}
+
+function drawBoard(){
+
+    ctx.clearRect(0,0,760,760);
+
+    ctx.fillStyle="#d8a55d";
+    ctx.fillRect(0,0,760,760);
+
+    ctx.strokeStyle="#333";
+
+    for(let i=0;i<SIZE;i++){
+
+        ctx.beginPath();
+        ctx.moveTo(OFFSET,i*CELL+OFFSET);
+        ctx.lineTo(OFFSET+CELL*(SIZE-1),i*CELL+OFFSET);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(i*CELL+OFFSET,OFFSET);
+        ctx.lineTo(i*CELL+OFFSET,OFFSET+CELL*(SIZE-1));
+        ctx.stroke();
+    }
+
+    // 돌 그리기
+    for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+
+            if(board[y][x]!=0){
+
+                ctx.beginPath();
+
+                ctx.arc(
+                    OFFSET+x*CELL,
+                    OFFSET+y*CELL,
+                    16,
+                    0,
+                    Math.PI*2
+                );
+
+                if(board[y][x]==1){
+                    ctx.fillStyle="black";
+                }else{
+                    ctx.fillStyle="white";
+                }
+
+                ctx.fill();
+
+                ctx.stroke();
+
+            }
+
+        }
+    }
+
+}
+
+canvas.addEventListener("click",function(e){
+
+    if(gameOver)return;
+
+    const rect=canvas.getBoundingClientRect();
+
+    const mx=e.clientX-rect.left;
+    const my=e.clientY-rect.top;
+
+    const x=Math.round((mx-OFFSET)/CELL);
+    const y=Math.round((my-OFFSET)/CELL);
+
+    if(x<0||x>=SIZE||y<0||y>=SIZE)return;
+
+    if(board[y][x]!=0)return;
+
+    board[y][x]=current;
+
+    drawBoard();
+
+    if(checkWin(x,y)){
+
+        gameOver=true;
+
+        document.getElementById("status").innerHTML=
+        current==1?"흑 승리!":"백 승리!";
+
+        return;
+    }
+
+    current=current==1?2:1;
+
+    document.getElementById("status").innerHTML=
+    current==1?"흑 차례":"백 차례";
+
+});
+
+function count(x,y,dx,dy){
+
+    let color=board[y][x];
+    let c=0;
+
+    let nx=x+dx;
+    let ny=y+dy;
+
+    while(
+        nx>=0&&nx<SIZE&&
+        ny>=0&&ny<SIZE&&
+        board[ny][nx]==color
+    ){
+        c++;
+        nx+=dx;
+        ny+=dy;
+    }
+
+    return c;
+
+}
+
+function checkWin(x,y){
+
+    let dirs=[
+        [1,0],
+        [0,1],
+        [1,1],
+        [1,-1]
+    ];
+
+    for(let d of dirs){
+
+        let total=
+            1+
+            count(x,y,d[0],d[1])+
+            count(x,y,-d[0],-d[1]);
+
+        if(total>=5)
+            return true;
+    }
+
+    return false;
+
+}
+
+function resetGame(){
+    init();
+}
+
+init();
+
+</script>
+
+</body>
+</html>
